@@ -30,10 +30,10 @@ jobs:
       - name: Smoke test (no Mbox on the runner)
         run: |
           set +e
-          ./build/mbox3ctl --help;  test $? -eq 2
-          ./build/mbox3ctl info;    test $? -eq 3   # 3 = "no Mbox 3 found", the expected answer here
-          lipo -archs build/mbox3ctl | grep -q arm64
-          codesign --verify --verbose build/mbox3ctl
+          ./build/mbox3ctl --help;  [ $? -eq 2 ] || exit 1
+          ./build/mbox3ctl info;    [ $? -eq 3 ] || exit 1   # 3 = "no Mbox 3 found", the expected answer here
+          lipo -archs build/mbox3ctl | grep -q arm64 || exit 1
+          codesign --verify --verbose build/mbox3ctl || exit 1
       - uses: actions/upload-artifact@v7
         with:
           name: mbox3ctl-arm64
