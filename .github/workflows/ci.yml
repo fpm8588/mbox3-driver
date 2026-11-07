@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: chmod +x build.sh && ./build.sh test
+
+  macos-arm64:
+    # macos-latest is an Apple Silicon (arm64) runner. Free for public repositories.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Toolchain
+        run: |
+          sw_vers
+          uname -m
+          clang --version
+          xcrun --show-sdk-version
+      - name: Unit tests
+        run: chmod +x build.sh && ./build.sh test
+      - name: Build mbox3ctl
+        run: ./build.sh cli
+      - name: Smoke test (no Mbox on the runner)
+        run: |
+          set +e
+          ./build/mbox3ctl --help;  test $? -eq 2
+          ./build/mbox3ctl info;    test $? -eq 3   # 3 = "no Mbox 3 found", the expected answer here
+          lipo -archs build/mbox3ctl | grep -q arm64
+          codesign --verify --verbose build/mbox3ctl
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mbox3ctl-arm64
+          path: build/mbox3ctl
